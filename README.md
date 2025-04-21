@@ -22,20 +22,20 @@
 
 Our work can be divided into 5 major components:
 
-1. **Urban Safety Dataset**: Physically manufactured camera boxes, video collection, data pre-processing, labeling, and carefully designed train-test splits.
+1. **Urban Safety Dataset**: Physically manufactured camera boxes, video collection, data pre-processing, labeling.
 2. **Augmentation**: Designed a suitable augmentation pipeline including custom augmentations such as rain and scratches.
-3. **Object Detection Using YOLO**: Custom YOLO model development.
-4. **Model training, evaluation, and deployment**: Experimental setup, metrics, splits, etc.
+3. **Object Detection Using YOLO**: Custom YOLO model design.
+4. **Model training, evaluation, and deployment**: Experimental setup, mAP, and carefully designed train-test splits.
 5. **Results**: Quantitative results and key insights, including policy-relevant findings.
 
 ---
 
-## 1. Urban Safety Dataset (USD)
+## 1.) Urban Safety Dataset (USD)
 The image below gives a quick overview of how the Urban Safety Dataset (USD) was built, from raw video and external sources, through preprocessing, and all the way to the final annotations. It also shows the recording locations and the safety-related object classes included.
 In the next few sections, I’ll walk through each part of the process in a bit more detail.
 ![](readme_stuff/data_overview.jpg)
 
-### Data Collection – Setup, Locations and Recordings
+### 1.1 Data Collection – Setup, Locations and Recordings
 
 We collected video from three Copenhagen sites: **Egmont**, **Lyngbyvej**, and **Valby**.
 
@@ -52,7 +52,7 @@ Recordings were carried out over two periods: late 2021 and early 2022. Each ses
 To avoid issues with motion blur in low light, we discarded footage outside the interval **06:00–19:00**. While night footage might have been interesting (e.g. light usage), the video quality just wasn’t usable.
 
 
-### Preprocessing
+### 1.2 Preprocessing
 
 Our raw video data totaled ~4 TB, most of it redundant. We built a 6-step pipeline to reduce size while keeping the important bits.
 
@@ -62,12 +62,12 @@ Our raw video data totaled ~4 TB, most of it redundant. We built a 6-step pipeli
 #### Step-by-Step Example
 ![](readme_stuff/data_preprocessing_example.jpg)
 
-#### 1. Time Restriction
+#### 1.2.1 Time Restriction
 We only used footage between **06:00 and 19:00** to avoid motion blur from poor lighting at night. This alone cut down the total volume significantly.
 
 ![](readme_stuff/data_time_interval_reduction.png)
 
-#### 2. Rotation, Resizing & FPS Reduction
+#### 1.2.2 Rotation, Resizing & FPS Reduction
 
 - Rotated videos to correct orientation (multiples of 90° only).
 - Resized from 1920×1080 → 960×540.
@@ -103,20 +103,20 @@ $$
 
 This yields $N = 5$. Therefore, reducing the frame rate to 5 FPS still ensures each object of interest appears in at least one frame.
 
-#### 3. Compression
+#### 1.2.3 Compression
 We applied fairly aggressive **H.265 compression** using `ffmpeg` to reduce the file size as much as possible without compromising usability. 
 
-#### 4. Cropping
+#### 1.2.4 Cropping
 Cropped out the sky, poles, and other irrelevant regions to cut down size and focus only on the bike lane.
 
-#### 5. YOLO Frame Selection
+#### 1.2.5 YOLO Frame Selection
 Most frames contained nothing of interest. We used a pretrained **YOLOv3 model (Ultralytics, COCO-trained)** to keep only frames containing bikes or people. Confidence threshold was set very low (20%) to avoid false negatives.
 This step was critical to speed up annotation later.
 
-#### 6. Manual E-Scooter Search
+#### 1.2.6 Manual E-Scooter Search
 E-scooters were rare. We manually located and labeled every instance in all videos from Valby and Lyngbyvej. Took ~24–48 man-hours but was necessary for class balance and helmet law analysis.
 
-## Robustness Dataset
+### 1.3 Robustness Dataset
 
 To improve generalization, we created a small **Robustness Dataset** covering conditions not seen in our main dataset—like different clothing, lighting, and viewpoints. It includes:
 
@@ -130,7 +130,7 @@ This helped diversify perspectives (e.g. front, back views) and clothing styles 
  
 
 
-### Final Overview
+### 1.4 Final Overview
 
 After preprocessing, the raw ~4 TB of footage was reduced to ~10 GB.  
 The final dataset contains **4870 images** and **6305 labeled instances** across 7 classes:
@@ -154,14 +154,14 @@ To improve generalization and reduce overfitting, we designed three categories o
 3. **Mosaic Augmentation** – combining multiple images into one
 
 
-### Basic Augmentation
+### 2.1 Basic Augmentation
 
 We used nine standard augmentations to artificially increase dataset diversity. Each transformation was carefully tuned to preserve bounding boxes and reflect realistic noise in low-budget outdoor cameras.
 
 ![](readme_stuff/augmentation_basic_examples.jpg)
 
 
-### Special Augmentation
+### 2.2 Special Augmentation
 
 We developed custom augmentations to simulate camera lens issues specific to outdoor bike lane recordings:
 
@@ -178,7 +178,7 @@ And here's a breakdown of the general method:
 
 ![](readme_stuff/augmentation_special_overview.jpg)
 
-### Mosaic Augmentation
+### 2.3 Mosaic Augmentation
 
 We implemented **Mosaic Augmentation**, introduced in YOLOv4, to further improve generalization.
 
@@ -198,7 +198,7 @@ This exposes the model to multiple objects, backgrounds, and contexts within a s
 
 ## 3.) Object Detection Using YOLO
 
-### 1. Introduction
+### 3.1 Introduction
 
 As illustrated in **Figure 1**, YOLO works in four simple steps:
 
@@ -219,7 +219,7 @@ As illustrated in **Figure 1**, YOLO works in four simple steps:
 
 All cells make these predictions in parallel in a single forward pass.
 
-### 2. Model Architecture
+### 3.2 Model Architecture
 
 Our model combines ideas from **YOLOv1** and **YOLOv3**: a DarkNet‑53 backbone for feature extraction plus a direct cell‑regression head (no anchors).  
 Input: $$3\times348\times348$$ RGB → Output reshaped to $$12\times12\times9$$ per‑cell predictions.
@@ -237,19 +237,19 @@ Input: $$3\times348\times348$$ RGB → Output reshaped to $$12\times12\times9$$
 
 1. **Average Pool** → $$1024\times1\times1$$
 2. **Flatten** → $$1024$$
-3. **Fully Connected** → $$1008$$ $$(=12\times12\times9)$$
+3. **Fully Connected** → $$1296$$ $$(=12\times12\times9)$$
 4. **Reshape** → $$(12,12,9)$$
 
 #### Final activations
 
-- Sigmoid ($$\sigma(x)=\frac{1}{1+e^{-x}}$$) is applied to $$P_{\mathrm{obj}},x$$ and $$y$$
+- Sigmoid, $$\sigma(x)=\frac{1}{1+e^{-x}}$$, is applied to $$P_{\mathrm{obj}},x$$ and $$y$$
 - $$|w|,|h|$$ via absolute value to enforce non‑negativity
-- Softmax over the four class logits → $$c_1,\dots,c_4$$
+- Softmax over the 4 class logits → $$c_1,\dots,c_4$$
 
 **Per‑cell output vector**  
 $$\[x,y,w,h,P_{\mathrm{obj}},c_1,\dots,c_4\]$$
 
-#### NMS
+### 3.3 NMS
 Our model predicts $$12^2 = 144$$ boxes (one per cell). To eliminate duplicates, we apply **class‑agnostic non‑max‑suppression (NMS)**:
 
 1. **Format conversion**  
@@ -274,7 +274,7 @@ The full pseudo‑code is shown here:
 
 ## 4.) Model training, evaluation, and deployment
 
-### Train and Test Split
+### 4.1 Train and Test Split
 
 The Urban Safety Dataset was split into training (≈95 %) and test (≈5 %) sets based on four intertwined criteria:
 
@@ -298,7 +298,7 @@ Figures below illustrate the split:
 
 ![Label distribution on an hourly basis](readme_stuff/results_label_distribution_time.png)
 
-### mAP
+### 4.2 mAP
 
 Mean Average Precision (mAP) is the mean of the **Average Precision (AP)** scores across all $$C$$ classes:
 
@@ -325,7 +325,7 @@ The figure below provides a visual break-down of MAP.
 ![Label distribution on an hourly basis](readme_stuff/methods_map.jpg)
 
 
-### Experimental Setup
+### 4.3 Experimental Setup
 
 We designed three unit tests with increasing difficulty (Figure 6):
 1. **Shape dataset**: custom-made, two classes (orange circle, blue square), black background, one object per image (varying size/location).
@@ -346,7 +346,7 @@ Here's a randomly chosen example from each unit test dataset:
 
 ## 5.) Results
 
-### Proof of Concept
+### 5.1 Proof of Concept
 
 The figures below show subsets of results from the three unit tests:
 
@@ -365,7 +365,7 @@ The figures below show subsets of results from the three unit tests:
 ![Copenhagen predictions](readme_stuff/results_unit_copenhagen.jpg)  
 *Predictions on randomly chosen test images from the Copenhagen dataset. Orange = Helmeted; Blue = Unhelmeted; left label = class (H/N); right label = confidence score.*
 
-### Main Results
+### 5.2 Main Results
 
 Table 3 presents an overview of all 22 experiments (11 per setup) on the Urban Safety Dataset. The leftmost columns list binary hyperparameters (augmentations, empty frames, robustness data, image size, batch size). Check marks indicate activated settings. Boldface highlights the best score per metric.
 
@@ -389,7 +389,7 @@ Overall, combining basic, special, mosaic augmentations (with or without empty/r
 ![Positive examples](readme_stuff/results_demo.png)  
 *Examples from the test set with the best 4-class model (Exp. 7): Eh = e-scooter with helmet; En = e-scooter without helmet; Ch = bicyclist with helmet; Cn = bicyclist without helmet.*
 
-#### Helmet law
+### 5.3 Helmet law
 ![Helmet law results](readme_stuff/helmet_law_table.jpg)  
 *The table shows helmet use among e-scooter riders in 2021 and 2022, counting unique riders (no duplicates across frames) from Valby and Lyngbyvej sites. Helmet usage increased from ~5.5% in 2021 to ~56% in 2022 following the introduction of the helmet law.
 
