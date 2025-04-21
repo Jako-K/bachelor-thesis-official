@@ -96,9 +96,9 @@ $$
 We set $v_{\text{max}} = 50\,\mathrm{km/h}$, $\theta = 90^\circ$, and $l = 1.5\,\mathrm{m}$. Thus:
 
 $$
-\max_{N \in \mathbb{N}} \left(50\,\mathrm{\frac{km}{h}} \cdot \frac{1}{N}\right)
+\max_{N \in \mathbb{N}} \left(50\mathrm{\frac{km}{h}} \cdot \frac{1}{N}\right)
 \quad \text{s.t.} \quad
-50\,\mathrm{\frac{km}{h}} \cdot \frac{1}{N} < \tan\left(\frac{90^\circ}{2}\right) \cdot 2 \cdot 1.5\,\mathrm{m}
+50\mathrm{\frac{km}{h}} \cdot \frac{1}{N} < \tan\left(\frac{90^\circ}{2}\right) \cdot 2 \cdot 1.5\,\mathrm{m}
 $$
 
 This yields $N = 5$. Therefore, reducing the frame rate to 5 FPS still ensures each object of interest appears in at least one frame.
