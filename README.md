@@ -5,7 +5,7 @@
 
 ### Summary
 - Collected bike lane footage in Copenhagen (2021–2022)
-- Built a labeled dataset: helmets, phones, bikes, e-scooters
+- Built a labeled dataset: bike and e‑scooter riders, with and without the following helmets, phones, headphones, and earbuds
 - Trained custom YOLO models with task-specific augmentations
 
 ### Results:
@@ -18,18 +18,19 @@
 
 ---
 
-## 1.) Overview
+## Overview
 
-Our work can essentially be divided into 4 major components:
+Our work can be divided into 5 major components:
 
-1. **Urban Safety Dataset**: Physically manufactured camera boxes, video collection, data pre-processing, labeling, and carefully designed train-valid-test splits.
+1. **Urban Safety Dataset**: Physically manufactured camera boxes, video collection, data pre-processing, labeling, and carefully designed train-test splits.
 2. **Augmentation**: Designed a suitable augmentation pipeline including custom augmentations such as rain and scratches.
-3. **Object Detection Using YOLO**: Custom YOLO model development, training, evaluation, and deployment.
-4. **Results & Conclusion**: Quantitative results and key insights, including policy-relevant findings.
+3. **Object Detection Using YOLO**: Custom YOLO model development.
+4. **Model training, evaluation, and deployment**: Experimental setup, metrics, splits, etc.
+5. **Results**: Quantitative results and key insights, including policy-relevant findings.
 
 ---
 
-## 2. Urban Safety Dataset (USD)
+## 1. Urban Safety Dataset (USD)
 The image below gives a quick overview of how the Urban Safety Dataset (USD) was built, from raw video and external sources, through preprocessing, and all the way to the final annotations. It also shows the recording locations and the safety-related object classes included.
 In the next few sections, I’ll walk through each part of the process in a bit more detail.
 ![](readme_stuff/data_overview.jpg)
@@ -61,14 +62,10 @@ Our raw video data totaled ~4 TB, most of it redundant. We built a 6-step pipeli
 #### Step-by-Step Example
 ![](readme_stuff/data_preprocessing_example.jpg)
 
----
-
 #### 1. Time Restriction
 We only used footage between **06:00 and 19:00** to avoid motion blur from poor lighting at night. This alone cut down the total volume significantly.
 
 ![](readme_stuff/data_time_interval_reduction.png)
-
----
 
 #### 2. Rotation, Resizing & FPS Reduction
 
@@ -106,27 +103,18 @@ $$
 
 This yields $N = 5$. Therefore, reducing the frame rate to 5 FPS still ensures each object of interest appears in at least one frame.
 
----
-
 #### 3. Compression
 We applied fairly aggressive **H.265 compression** using `ffmpeg` to reduce the file size as much as possible without compromising usability. 
 
----
-
 #### 4. Cropping
 Cropped out the sky, poles, and other irrelevant regions to cut down size and focus only on the bike lane.
-
----
 
 #### 5. YOLO Frame Selection
 Most frames contained nothing of interest. We used a pretrained **YOLOv3 model (Ultralytics, COCO-trained)** to keep only frames containing bikes or people. Confidence threshold was set very low (20%) to avoid false negatives.
 This step was critical to speed up annotation later.
 
----
-
 #### 6. Manual E-Scooter Search
 E-scooters were rare. We manually located and labeled every instance in all videos from Valby and Lyngbyvej. Took ~24–48 man-hours but was necessary for class balance and helmet law analysis.
-
 
 ## Robustness Dataset
 
@@ -156,15 +144,15 @@ The final dataset contains **4870 images** and **6305 labeled instances** across
 ![](readme_stuff/data_label_distribution.png)  
 *Final label distribution across all classes*
 
+---
 
-## Augmentation
+## 2.) Augmentation
 
 To improve generalization and reduce overfitting, we designed three categories of augmentations tailored to our use case:
 1. **Basic Augmentation** – standard image transforms
 2. **Special Augmentation** – custom artifacts like rain and dirt
 3. **Mosaic Augmentation** – combining multiple images into one
 
----
 
 ### Basic Augmentation
 
@@ -172,7 +160,6 @@ We used nine standard augmentations to artificially increase dataset diversity. 
 
 ![](readme_stuff/augmentation_basic_examples.jpg)
 
----
 
 ### Special Augmentation
 
@@ -191,8 +178,6 @@ And here's a breakdown of the general method:
 
 ![](readme_stuff/augmentation_special_overview.jpg)
 
----
-
 ### Mosaic Augmentation
 
 We implemented **Mosaic Augmentation**, introduced in YOLOv4, to further improve generalization.
@@ -209,7 +194,9 @@ This exposes the model to multiple objects, backgrounds, and contexts within a s
 ![](readme_stuff/augmentation_mosaic_overview.jpg)
 
 
-## YOLO Model
+---
+
+## 3.) Object Detection Using YOLO
 
 ### 1. Introduction
 
@@ -283,8 +270,9 @@ The full pseudo‑code is shown here:
 ![Figure 2: Overview of our YOLO implementation](readme_stuff/nms.jpg)
 
 
+---
 
-## Model Training & Evaluation
+## 4.) Model training, evaluation, and deployment
 
 ### Train and Test Split
 
@@ -354,8 +342,9 @@ For each setup, we trained 11 models to test effects of augmentations, image & b
 Here's a randomly chosen example from each unit test dataset:
 ![Proof‑of‑concept examples](readme_stuff/methods_proof_of_concept.jpg)
 
+---
 
-## Results
+## 5.) Results
 
 ### Proof of Concept
 
