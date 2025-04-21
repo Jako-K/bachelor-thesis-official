@@ -5,7 +5,7 @@
 
 ### Summary
 - Collected bike lane footage in Copenhagen (2021–2022)
-- Built a labeled dataset: bike and e‑scooter riders, with and without the following helmets, phones, headphones, and earbuds
+- Built a labeled dataset: bike and e‑scooter riders with helmets, phones, headphones, and earbuds
 - Trained custom YOLO models with task-specific augmentations
 
 ### Results:
@@ -30,7 +30,7 @@ Our work can be divided into 5 major components:
 
 ---
 
-## 1.) Urban Safety Dataset (USD)
+## 1.) Urban Safety Dataset
 The image below gives a quick overview of how the Urban Safety Dataset (USD) was built, from raw video and external sources, through preprocessing, and all the way to the final annotations. It also shows the recording locations and the safety-related object classes included.
 In the next few sections, I’ll walk through each part of the process in a bit more detail.
 ![](readme_stuff/data_overview.jpg)
@@ -391,5 +391,5 @@ Overall, combining basic, special, mosaic augmentations (with or without empty/r
 
 ### 5.3 Helmet law
 ![Helmet law results](readme_stuff/helmet_law_table.jpg)  
-*The table shows helmet use among e-scooter riders in 2021 and 2022, counting unique riders (no duplicates across frames) from Valby and Lyngbyvej sites. Helmet usage increased from ~5.5% in 2021 to ~56% in 2022 following the introduction of the helmet law.
+*The table shows helmet use among e-scooter riders in 2021 and 2022, counting unique riders (no duplicates across frames) from Valby and Lyngbyvej sites. Helmet usage increased from ~5.5% in 2021 to ~56% in 2022 following the introduction of the helmet law.*
 
